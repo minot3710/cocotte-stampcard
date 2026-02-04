@@ -123,7 +123,7 @@ function updateUI() {
     // クーポン画像をコードごとに表示（画像は1つだけ表示）
     const couponImageContainer = document.getElementById('couponImageContainer');
     const img = document.createElement('img');
-    img.src = 'coupon.png';
+    img.src = 'images/coupon.png';
     img.alt = `クーポン画像: ${coupon.code}`;
     img.style.maxWidth = '300px';
     img.style.height = 'auto';
