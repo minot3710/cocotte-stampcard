@@ -28,21 +28,28 @@ function getStampId() {
   return params.get('stampId');
 }
 
-// スタンプを押す（重複押印防止付き、ただしテスト用に同日複数回押印可能）
+// スタンプを押す（同じstampIdは1日に1回のみ押印可能）
 function addStamp(stampId) {
-  // テスト用に同日複数回押せるように制限を外す
-  // const today = getToday();
-  // const lastStampDate = localStorage.getItem('lastStampDate');
+  if (!stampId) {
+    alert('スタンプIDが指定されていません。');
+    return;
+  }
 
-  // if (lastStampDate === today) {
-  //   alert('本日はすでにスタンプを押しています。');
-  //   return;
-  // }
+  const today = getToday();
+  const stampHistoryKey = `stampHistory_${stampId}`;
+  const lastStampDate = localStorage.getItem(stampHistoryKey);
+
+  if (lastStampDate === today) {
+    alert('本日はすでにこのスタンプを押しています。');
+    return;
+  }
+
+  // 押印履歴を今日の日付で更新
+  localStorage.setItem(stampHistoryKey, today);
 
   let count = parseInt(localStorage.getItem('stampCount') || '0', 10);
   count += 1;
   localStorage.setItem('stampCount', count.toString());
-  // localStorage.setItem('lastStampDate', today);
 
   alert(`スタンプを押しました！ 現在のスタンプ数: ${count}`);
 
@@ -85,10 +92,14 @@ function updateStampUI() {
   });
 }
 
-// UI更新（スタンプ数・クーポン一覧）
+// UI更新（スタンプ数・クーポン一覧・UUID表示）
 function updateUI() {
   const count = localStorage.getItem('stampCount') || '0';
   document.getElementById('stampCountDisplay').textContent = `スタンプ数: ${count}`;
+
+  // UUID表示
+  const userId = localStorage.getItem('userId') || '';
+  document.getElementById('userIdDisplay').textContent = `ユーザーID: ${userId}`;
 
   // クーポン画像表示エリアをクリア
   const couponImageContainer = document.getElementById('couponImageContainer');
@@ -124,18 +135,31 @@ function updateUI() {
     li.appendChild(useBtn);
     couponList.appendChild(li);
 
-    // クーポン画像をコードごとに表示（画像は1つだけ表示）
-    const img = document.createElement('img');
-    img.src = 'coupon.png';
-    img.alt = `クーポン画像: ${coupon.code}`;
-    img.style.maxWidth = '300px';
-    img.style.height = 'auto';
-    img.style.border = '2px solid #4CAF50';
-    img.style.borderRadius = '8px';
-    img.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
-    img.style.marginTop = '10px';
+    // クーポン画像とコードをセットで表示
+    const container = document.createElement('div');
+    container.className = 'coupon-container';
 
-    couponImageContainer.appendChild(img);
+    const img = document.createElement('img');
+    img.src = './images/coupon.png';
+    img.alt = `クーポン画像: ${coupon.code}`;
+
+    // 画像クリックで使用済みにする
+    img.style.cursor = 'pointer';
+    img.title = 'タップで使用済みにします';
+    img.onclick = () => {
+      coupon.used = true;
+      localStorage.setItem('coupons', JSON.stringify(coupons));
+      updateUI();
+      alert(`クーポンコード ${coupon.code} を使用済みにしました。`);
+    };
+
+    const codeLabel = document.createElement('div');
+    codeLabel.className = 'coupon-code';
+    codeLabel.textContent = coupon.code;
+
+    container.appendChild(img);
+    container.appendChild(codeLabel);
+    couponImageContainer.appendChild(container);
   });
 
   updateStampUI();
